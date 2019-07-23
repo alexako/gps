@@ -14,6 +14,13 @@ import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -28,11 +35,14 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MapsActivity extends FragmentActivity
         implements OnMapReadyCallback {
 
+    String URL = "http://autobot.alexjreyes.com/update-location";
     GoogleMap mGoogleMap;
     SupportMapFragment mapFrag;
     LocationRequest mLocationRequest;
@@ -92,6 +102,7 @@ public class MapsActivity extends FragmentActivity
     LocationCallback mLocationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(LocationResult locationResult) {
+            //volley request
             List<Location> locationList = locationResult.getLocations();
             if (locationList.size() > 0) {
                 //The last location in the list is the newest
@@ -103,6 +114,8 @@ public class MapsActivity extends FragmentActivity
                 }
 
                 //Place current location marker
+//                lattitude = String.valueOf(location.getLatitude());
+//                longitude = String.valueOf(location.getLongitude());
                 LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                 MarkerOptions markerOptions = new MarkerOptions();
                 markerOptions.position(latLng);
@@ -110,11 +123,15 @@ public class MapsActivity extends FragmentActivity
                 markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
                 mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
 
+                postGPS(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
+
                 //move map camera
                 mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 11));
             }
         }
     };
+
+
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     private void checkLocationPermission() {
@@ -151,6 +168,37 @@ public class MapsActivity extends FragmentActivity
                         MY_PERMISSIONS_REQUEST_LOCATION );
             }
         }
+    }
+
+    public void postGPS(final String latitude, final String longitude) {
+
+        StringRequest request = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>(){
+            @Override
+            public void onResponse(String s) {
+                if(s.equals("true")){
+                    Toast.makeText(MapsActivity.this, "Latitude: " + latitude + "Longitude: " + longitude, Toast.LENGTH_LONG).show();
+                }
+                else{
+                    Toast.makeText(MapsActivity.this, "Unsuccessful", Toast.LENGTH_LONG).show();
+                }
+            }
+        },new Response.ErrorListener(){
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+                Toast.makeText(MapsActivity.this, "Some error occurred -> "+volleyError, Toast.LENGTH_LONG).show();;
+            }
+        }) {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> parameters = new HashMap<String, String>();
+                parameters.put("latitude", latitude);
+                parameters.put("longitude", longitude);
+                return parameters;
+            }
+        };
+
+        RequestQueue rQueue = Volley.newRequestQueue(MapsActivity.this);
+        rQueue.add(request);
     }
 
     @Override
