@@ -35,6 +35,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONObject;
+
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,7 @@ import java.util.Map;
 public class MapsActivity extends FragmentActivity
         implements OnMapReadyCallback {
 
+    int REQUEST_INTERVAL = 2000;
     String URL = "http://autobot.alexjreyes.com/update-location";
     GoogleMap mGoogleMap;
     SupportMapFragment mapFrag;
@@ -74,11 +78,11 @@ public class MapsActivity extends FragmentActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
-        mGoogleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        mGoogleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
 
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(120000); // two minute interval
-        mLocationRequest.setFastestInterval(120000);
+        mLocationRequest.setInterval(REQUEST_INTERVAL);
+        mLocationRequest.setFastestInterval(REQUEST_INTERVAL);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -126,7 +130,7 @@ public class MapsActivity extends FragmentActivity
                 postGPS(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
 
                 //move map camera
-                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 11));
+                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
             }
         }
     };
