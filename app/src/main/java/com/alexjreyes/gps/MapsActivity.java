@@ -31,6 +31,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -118,8 +119,6 @@ public class MapsActivity extends FragmentActivity
                 }
 
                 //Place current location marker
-//                lattitude = String.valueOf(location.getLatitude());
-//                longitude = String.valueOf(location.getLongitude());
                 LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                 MarkerOptions markerOptions = new MarkerOptions();
                 markerOptions.position(latLng);
@@ -127,10 +126,13 @@ public class MapsActivity extends FragmentActivity
                 markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
                 mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
 
-                postGPS(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
+                getDirectionsTo(latLng, latLng);
 
                 //move map camera
-                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                CameraPosition cameraPosition = new CameraPosition.Builder().target(latLng).zoom(16).build();
+                mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+                postGPS(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
             }
         }
     };
@@ -182,9 +184,6 @@ public class MapsActivity extends FragmentActivity
                 if(s.equals("true")){
                     Toast.makeText(MapsActivity.this, "Latitude: " + latitude + "Longitude: " + longitude, Toast.LENGTH_LONG).show();
                 }
-                else{
-                    Toast.makeText(MapsActivity.this, "Unsuccessful", Toast.LENGTH_LONG).show();
-                }
             }
         },new Response.ErrorListener(){
             @Override
@@ -200,6 +199,30 @@ public class MapsActivity extends FragmentActivity
                 return parameters;
             }
         };
+
+        RequestQueue rQueue = Volley.newRequestQueue(MapsActivity.this);
+        rQueue.add(request);
+    }
+
+    public void getDirectionsTo(final LatLng originLatLng, final LatLng destLatLng) {
+
+        String origin = String.format("%f,%f", originLatLng.latitude, originLatLng.longitude);
+        String destination = String.format("%f,%f", destLatLng.latitude, destLatLng.longitude);
+
+        String baseURL = "https://maps.googleapis.com/maps/api/directions/json?origin=%s&destination=%s&key=%s";
+        String directionsURL = String.format(baseURL, origin, destination, BuildConfig.googleMapsAPIKey);
+
+        StringRequest request = new StringRequest(Request.Method.GET, directionsURL, new Response.Listener<String>(){
+            @Override
+            public void onResponse(String s) {
+                Toast.makeText(MapsActivity.this, s, Toast.LENGTH_LONG);
+            }
+        },new Response.ErrorListener(){
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+                Toast.makeText(MapsActivity.this, "Some error occurred -> "+volleyError, Toast.LENGTH_LONG).show();;
+            }
+        });
 
         RequestQueue rQueue = Volley.newRequestQueue(MapsActivity.this);
         rQueue.add(request);
